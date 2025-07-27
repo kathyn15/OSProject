@@ -1,3 +1,17 @@
+/*
+ * File: shell.c
+ * Authors: Group 7: Francisco Ortega, Peter Nguyen, Kathy Nguyen
+ * Course: Operating Systems
+ * Assignment: Simple Shell
+ * Due Date: July 28, 2025
+ *
+ * Description:
+ *   This is a simple shell that runs in a loop, takes input from the user, 
+ *   looks for the command inputted, and runs using the execv(). This loop will continue 
+ *   until the user exits.
+ */
+
+
 //libaries
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +45,7 @@ void parseCommand(char* inputBuffer, command_t* cmd) {
   char* token = strtok(inputBuffer, " ");
   int index = 0;
 
+  // store the tokens as arguments until the max is reached
   while (token != NULL && index < MAX_CMDLINE - 1) {
     cmd->argv[index++] = token;
     token = strtok(NULL, " ");
@@ -39,18 +54,22 @@ void parseCommand(char* inputBuffer, command_t* cmd) {
   cmd->argv[index] = NULL;  // null-terminate for execv
   cmd->argc = index;
 }
+
 // Parses the system PATH into an array of directories
 int parsePath(char* dir[]) {
+  
   char* pathEnv = getenv("PATH");
   char* token = strtok(pathEnv, ":");
   int count = 0;
 
+  // loop will store the directories into an array until a certain set of conditions is met
   while (token != NULL && count < MAX_PATHS) {
     dir[count++] = token;
     token = strtok(NULL, ":");
   }
 
   dir[count] = NULL;  // null-terminate
+  
   return count;
 }
 // Searches for the command in the directories from PATH
@@ -65,6 +84,7 @@ char* lookupPath(char* cmdName, char* dir[]) {
     return NULL;
   }
 
+  // if not, we can search the dir to find the file
   for (int i = 0; dir[i] != NULL; i++) {
     snprintf(fullPath, sizeof(fullPath), "%s/%s", dir[i], cmdName);
     if (access(fullPath, X_OK) == 0) {
@@ -75,11 +95,14 @@ char* lookupPath(char* cmdName, char* dir[]) {
   return NULL;  // not found
 }
 
+
+// main loop of the shell
 int main() {
   char inputBuffer[MAX_CMDLINE];
   char* pathDirs[MAX_PATHS];
   command_t command;
 
+  // prompts user to enter a command and executes until user exits
   while (1) {
     printPrompt();
     readCommand(inputBuffer);
@@ -102,6 +125,7 @@ int main() {
     }
 
     pid_t pid = fork();
+    
     if (pid == 0) {
       // In child process
       execv(cmdPath, command.argv);
